@@ -59,15 +59,6 @@ func (e *Endpoint) DeliverNetworkPacket(remote, local tcpip.LinkAddress, protoco
 	e.dispatchGate.Leave()
 }
 
-// DeliverOutboundPacket implements stack.NetworkDispatcher.DeliverOutboundPacket.
-func (e *Endpoint) DeliverOutboundPacket(remote, local tcpip.LinkAddress, protocol tcpip.NetworkProtocolNumber, pkt *stack.PacketBuffer) {
-	if !e.dispatchGate.Enter() {
-		return
-	}
-	e.dispatcher.DeliverOutboundPacket(remote, local, protocol, pkt)
-	e.dispatchGate.Leave()
-}
-
 // Attach implements stack.LinkEndpoint.Attach. It saves the dispatcher and
 // registers with the lower endpoint as its dispatcher so that "e" is called
 // for inbound packets.
@@ -155,3 +146,6 @@ func (e *Endpoint) ARPHardwareType() header.ARPHardwareType {
 func (e *Endpoint) AddHeader(local, remote tcpip.LinkAddress, protocol tcpip.NetworkProtocolNumber, pkt *stack.PacketBuffer) {
 	e.lower.AddHeader(local, remote, protocol, pkt)
 }
+
+// WriteRawPacket implements stack.LinkEndpoint.
+func (*Endpoint) WriteRawPacket(*stack.PacketBuffer) tcpip.Error { return &tcpip.ErrNotSupported{} }

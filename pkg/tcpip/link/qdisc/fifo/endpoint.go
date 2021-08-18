@@ -108,11 +108,6 @@ func (e *endpoint) DeliverNetworkPacket(remote, local tcpip.LinkAddress, protoco
 	e.dispatcher.DeliverNetworkPacket(remote, local, protocol, pkt)
 }
 
-// DeliverOutboundPacket implements stack.NetworkDispatcher.DeliverOutboundPacket.
-func (e *endpoint) DeliverOutboundPacket(remote, local tcpip.LinkAddress, protocol tcpip.NetworkProtocolNumber, pkt *stack.PacketBuffer) {
-	e.dispatcher.DeliverOutboundPacket(remote, local, protocol, pkt)
-}
-
 // Attach implements stack.LinkEndpoint.Attach.
 func (e *endpoint) Attach(dispatcher stack.NetworkDispatcher) {
 	// nil means the NIC is being removed.
@@ -227,4 +222,9 @@ func (e *endpoint) ARPHardwareType() header.ARPHardwareType {
 // AddHeader implements stack.LinkEndpoint.AddHeader.
 func (e *endpoint) AddHeader(local, remote tcpip.LinkAddress, protocol tcpip.NetworkProtocolNumber, pkt *stack.PacketBuffer) {
 	e.lower.AddHeader(local, remote, protocol, pkt)
+}
+
+// WriteRawPacket implements stack.LinkEndpoint.
+func (e *endpoint) WriteRawPacket(pkt *stack.PacketBuffer) tcpip.Error {
+	return e.lower.WriteRawPacket(pkt)
 }

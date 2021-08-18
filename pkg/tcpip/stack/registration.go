@@ -733,16 +733,6 @@ type NetworkDispatcher interface {
 	//
 	// DeliverNetworkPacket takes ownership of pkt.
 	DeliverNetworkPacket(remote, local tcpip.LinkAddress, protocol tcpip.NetworkProtocolNumber, pkt *PacketBuffer)
-
-	// DeliverOutboundPacket is called by link layer when a packet is being
-	// sent out.
-	//
-	// pkt.LinkHeader may or may not be set before calling
-	// DeliverOutboundPacket. Some packets do not have link headers (e.g.
-	// packets sent via loopback), and won't have the field set.
-	//
-	// DeliverOutboundPacket takes ownership of pkt.
-	DeliverOutboundPacket(remote, local tcpip.LinkAddress, protocol tcpip.NetworkProtocolNumber, pkt *PacketBuffer)
 }
 
 // LinkEndpointCapabilities is the type associated with the capabilities
@@ -846,6 +836,14 @@ type LinkEndpoint interface {
 	// offload is enabled. If it will be used for something else, syscall filters
 	// may need to be updated.
 	WritePackets(RouteInfo, PacketBufferList, tcpip.NetworkProtocolNumber) (int, tcpip.Error)
+
+	// WriteRawPacket writes a packet directly to the link.
+	//
+	// If the link-layer has its own header, the payload must already include the
+	// header.
+	//
+	// WriteRawPacket takes ownership of the packet.
+	WriteRawPacket(*PacketBuffer) tcpip.Error
 }
 
 // InjectableLinkEndpoint is a LinkEndpoint where inbound packets are
