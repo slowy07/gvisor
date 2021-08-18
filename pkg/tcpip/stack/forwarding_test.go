@@ -342,6 +342,10 @@ func (e *fwdTestLinkEndpoint) WritePackets(r RouteInfo, pkts PacketBufferList, p
 	return n, nil
 }
 
+func (*fwdTestLinkEndpoint) WriteRawPacket(*PacketBuffer) tcpip.Error {
+	return &tcpip.ErrNotSupported{}
+}
+
 // Wait implements stack.LinkEndpoint.Wait.
 func (*fwdTestLinkEndpoint) Wait() {}
 
@@ -352,7 +356,6 @@ func (*fwdTestLinkEndpoint) ARPHardwareType() header.ARPHardwareType {
 
 // AddHeader implements stack.LinkEndpoint.AddHeader.
 func (e *fwdTestLinkEndpoint) AddHeader(tcpip.LinkAddress, tcpip.LinkAddress, tcpip.NetworkProtocolNumber, *PacketBuffer) {
-	panic("not implemented")
 }
 
 func fwdTestNetFactory(t *testing.T, proto *fwdTestNetworkProtocol) (*faketime.ManualClock, *fwdTestLinkEndpoint, *fwdTestLinkEndpoint) {

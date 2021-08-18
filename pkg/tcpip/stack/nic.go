@@ -365,6 +365,7 @@ func (n *nic) writePacket(r RouteInfo, protocol tcpip.NetworkProtocolNumber, pkt
 
 	pkt.EgressRoute = r
 	pkt.NetworkProtocolNumber = protocol
+	n.LinkEndpoint.AddHeader(n.LinkAddress(), r.RemoteLinkAddress, protocol, pkt)
 	if err := n.LinkEndpoint.WritePacket(r, protocol, pkt); err != nil {
 		return err
 	}
@@ -383,6 +384,7 @@ func (n *nic) writePackets(r RouteInfo, protocol tcpip.NetworkProtocolNumber, pk
 	for pkt := pkts.Front(); pkt != nil; pkt = pkt.Next() {
 		pkt.EgressRoute = r
 		pkt.NetworkProtocolNumber = protocol
+		n.LinkEndpoint.AddHeader(n.LinkAddress(), r.RemoteLinkAddress, protocol, pkt)
 	}
 
 	writtenPackets, err := n.LinkEndpoint.WritePackets(r, pkts, protocol)
@@ -763,7 +765,6 @@ func (n *nic) DeliverOutboundPacket(remote, local tcpip.LinkAddress, protocol tc
 		p.PktType = tcpip.PacketOutgoing
 		// Add the link layer header as outgoing packets are intercepted
 		// before the link layer header is created.
-		n.LinkEndpoint.AddHeader(local, remote, protocol, p)
 		ep.HandlePacket(n.id, local, protocol, p)
 	})
 }
