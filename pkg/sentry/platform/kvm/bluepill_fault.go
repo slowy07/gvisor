@@ -72,11 +72,23 @@ func calculateBluepillFault(physical uintptr, phyRegions []physicalRegion) (virt
 	return 0, 0, 0, false
 }
 
+//go:nosplit
+func physToVirt(physical uintptr, phyRegions []physicalRegion) (uintptr, bool) {
+	// Paging fault: we need to map the underlying physical pages for this
+	// fault. This all has to be done in this function because we're in a
+	// signal handler context. (We can't call any functions that might
+	// split the stack.)
+	virtualStart, physicalStart, _, ok := calculateBluepillFault(physical, phyRegions)
+	if !ok {
+		return 0, false
+	}
+
+	return virtualStart + (physical - physicalStart), true
+}
+
 // handleBluepillFault handles a physical fault.
 //
 // The corresponding virtual address is returned. This may throw on error.
-//
-//go:nosplit
 func handleBluepillFault(m *machine, physical uintptr, phyRegions []physicalRegion, flags uint32) (uintptr, bool) {
 	// Paging fault: we need to map the underlying physical pages for this
 	// fault. This all has to be done in this function because we're in a

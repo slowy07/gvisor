@@ -46,7 +46,9 @@ var physicalRegions []physicalRegion
 // physical mapping.
 //
 // The excluded regions are returned.
-func fillAddressSpace() (excludedRegions []region) {
+func fillAddressSpace(m *machine) (excludedRegions []region) {
+	slots := (uintptr)(m.maxSlots)
+
 	// We can cut vSize in half, because the kernel will be using the top
 	// half and we ignore it while constructing mappings. It's as if we've
 	// already excluded half the possible addresses.
@@ -66,6 +68,10 @@ func fillAddressSpace() (excludedRegions []region) {
 			log.Infof("excluded: virtual [%x,%x)", vr.virtual, vr.virtual+vr.length)
 		}
 	})
+
+	if (slots-uintptr(len(excludedRegions)))*faultBlockSize < pSize {
+		pSize = (slots - uintptr(len(excludedRegions))) * faultBlockSize
+	}
 
 	// Do we need any more work?
 	if vSize < pSize {
@@ -90,6 +96,9 @@ func fillAddressSpace() (excludedRegions []region) {
 	required := uintptr(requiredAddr)
 	current := required // Attempted mmap size.
 	for filled := uintptr(0); filled < required && current > 0; {
+		if current > required-filled {
+			current = required - filled
+		}
 		addr, _, errno := unix.RawSyscall6(
 			unix.SYS_MMAP,
 			0, // Suggested address.
@@ -177,8 +186,8 @@ func computePhysicalRegions(excludedRegions []region) (physicalRegions []physica
 }
 
 // physicalInit initializes physical address mappings.
-func physicalInit() {
-	physicalRegions = computePhysicalRegions(fillAddressSpace())
+func physicalInit(m *machine) {
+	physicalRegions = computePhysicalRegions(fillAddressSpace(m))
 }
 
 // applyPhysicalRegions applies the given function on physical regions.
