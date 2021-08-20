@@ -230,9 +230,13 @@ func (*runExitMain) execute(t *Task) taskRunState {
 	t.tg.pidns.owner.mu.Lock()
 	t.updateRSSLocked()
 	t.tg.pidns.owner.mu.Unlock()
+
+	// Don't hold t.mu while calling image.release(), as that may try to
+	// acquire mm.mappingMu, a lock order violation.
 	t.mu.Lock()
-	t.image.release()
+	image := &t.image
 	t.mu.Unlock()
+	image.release()
 
 	// Releasing the MM unblocks a blocked CLONE_VFORK parent.
 	t.unstopVforkParent()
