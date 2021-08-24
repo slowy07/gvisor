@@ -2067,6 +2067,61 @@ TEST_P(SimpleTcpSocketTest, GetSocketAcceptConnWithShutdown) {
   EXPECT_EQ(got, 0);
 }
 
+TEST_P(SimpleTcpSocketTest, ShutdownConnectingSocket) {
+  // TODO(b/171345701): Fix the TCP state for listening socket on shutdown.
+  // SKIP_IF(IsRunningOnGvisor());
+
+  FileDescriptor bound_s =
+      ASSERT_NO_ERRNO_AND_VALUE(Socket(GetParam(), SOCK_STREAM, IPPROTO_TCP));
+
+  // Initialize address to the loopback one.
+  sockaddr_storage bound_addr =
+      ASSERT_NO_ERRNO_AND_VALUE(InetLoopbackAddr(GetParam()));
+  socklen_t bound_addrlen = sizeof(bound_addr);
+
+  ASSERT_THAT(bind(bound_s.get(), AsSockAddr(&bound_addr), bound_addrlen),
+              SyscallSucceeds());
+
+  // Start listening. Use a zero backlog to only allow one connection in the
+  // accept queue.
+  ASSERT_THAT(listen(bound_s.get(), 0), SyscallSucceeds());
+
+  // Get the addresses the socket is bound to because the port is chosen by the
+  // stack.
+  ASSERT_THAT(
+      getsockname(bound_s.get(), AsSockAddr(&bound_addr), &bound_addrlen),
+      SyscallSucceeds());
+
+  // Establish a connection.  But do not accept it. That way, subsequent
+  // connections will not get accepted because the queue is full.
+  FileDescriptor connected_s =
+      ASSERT_NO_ERRNO_AND_VALUE(Socket(GetParam(), SOCK_STREAM, IPPROTO_TCP));
+  ASSERT_THAT(connect(connected_s.get(),
+                      reinterpret_cast<const struct sockaddr*>(&bound_addr),
+                      bound_addrlen),
+              SyscallSucceeds());
+
+  FileDescriptor connecting_s = ASSERT_NO_ERRNO_AND_VALUE(
+      Socket(GetParam(), SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP));
+  ASSERT_THAT(connect(connecting_s.get(),
+                      reinterpret_cast<const struct sockaddr*>(&bound_addr),
+                      bound_addrlen),
+              SyscallFailsWithErrno(EINPROGRESS));
+
+  // Now the test: when a connecting socket is shutdown, the socket should enter
+  // an error state.
+  EXPECT_THAT(shutdown(connecting_s.get(), SHUT_RD), SyscallSucceeds());
+
+  // We don't need to specify any events to get POLLHUP or POLLERR because these
+  // are always tracked.
+  struct pollfd poll_fd = {
+      .fd = connecting_s.get(),
+      .events = POLLOUT,
+  };
+  EXPECT_THAT(RetryEINTR(poll)(&poll_fd, 1, 1000), SyscallSucceedsWithValue(1));
+  EXPECT_NE(poll_fd.revents & (POLLOUT | POLLHUP | POLLERR), 0);
+}
+
 // Tests that connecting to an unspecified address results in ECONNREFUSED.
 TEST_P(SimpleTcpSocketTest, ConnectUnspecifiedAddress) {
   sockaddr_storage addr;

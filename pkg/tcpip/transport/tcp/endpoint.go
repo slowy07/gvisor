@@ -1021,8 +1021,6 @@ func (e *endpoint) Close() {
 		}
 	}
 
-	// Issue a shutdown so that the peer knows we won't send any more data
-	// if we're connected, or stop accepting if we're listening.
 	e.shutdownLocked(tcpip.ShutdownWrite | tcpip.ShutdownRead)
 	e.closeNoShutdownLocked()
 }
@@ -2380,6 +2378,17 @@ func (*endpoint) ConnectEndpoint(tcpip.Endpoint) tcpip.Error {
 func (e *endpoint) Shutdown(flags tcpip.ShutdownFlags) tcpip.Error {
 	e.LockUser()
 	defer e.UnlockUser()
+
+	if e.EndpointState().connecting() {
+		// When calling shutdown(2) on a connecting socket, it must enter the error
+		// state. But this logic cannot belong to the shutdownLocked method because
+		// it is used inside close(2) as well (and closing a connecting socket is
+		// not an error).
+		e.resetConnectionLocked(&tcpip.ErrConnectionReset{})
+		e.waiterQueue.Notify(waiter.WritableEvents | waiter.EventErr | waiter.EventHUp)
+		return nil
+	}
+
 	return e.shutdownLocked(flags)
 }
 
