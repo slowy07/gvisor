@@ -14,6 +14,7 @@ cc_binary(
         grpcpp,
         "//test/packetimpact/proto:posix_server_cc_grpc_proto",
         "//test/packetimpact/proto:posix_server_cc_proto",
+        "//third_party/grpc:grpc++",
         "@com_google_absl//absl/strings:str_format",
     ],
 )
@@ -25,6 +26,7 @@ cc_binary(
         grpcpp,
         "//test/packetimpact/proto:posix_server_cc_grpc_proto",
         "//test/packetimpact/proto:posix_server_cc_proto",
+        "//third_party/grpc:grpc++",
         "@com_google_absl//absl/strings:str_format",
     ],
 )
