@@ -280,7 +280,7 @@ func zeroOut(dst uintptr, toZero uintptr) (uintptr, error) {
 // not aligned to a 4-byte boundary.
 func SwapUint32(ptr unsafe.Pointer, new uint32) (uint32, error) {
 	if addr := uintptr(ptr); addr&3 != 0 {
-		return 0, AlignmentError{addr, 4}
+		return 0, NewAlignmentError(addr, 4)
 	}
 	old, sig := swapUint32(ptr, new)
 	return old, errorFromFaultSignal(uintptr(ptr), sig)
@@ -291,7 +291,7 @@ func SwapUint32(ptr unsafe.Pointer, new uint32) (uint32, error) {
 // not aligned to an 8-byte boundary.
 func SwapUint64(ptr unsafe.Pointer, new uint64) (uint64, error) {
 	if addr := uintptr(ptr); addr&7 != 0 {
-		return 0, AlignmentError{addr, 8}
+		return 0, NewAlignmentError(addr, 8)
 	}
 	old, sig := swapUint64(ptr, new)
 	return old, errorFromFaultSignal(uintptr(ptr), sig)
@@ -302,7 +302,7 @@ func SwapUint64(ptr unsafe.Pointer, new uint64) (uint64, error) {
 // accessing ptr, or if ptr is not aligned to a 4-byte boundary.
 func CompareAndSwapUint32(ptr unsafe.Pointer, old, new uint32) (uint32, error) {
 	if addr := uintptr(ptr); addr&3 != 0 {
-		return 0, AlignmentError{addr, 4}
+		return 0, NewAlignmentError(addr, 4)
 	}
 	prev, sig := compareAndSwapUint32(ptr, old, new)
 	return prev, errorFromFaultSignal(uintptr(ptr), sig)
@@ -314,7 +314,7 @@ func CompareAndSwapUint32(ptr unsafe.Pointer, old, new uint32) (uint32, error) {
 // Preconditions: ptr must be aligned to a 4-byte boundary.
 func LoadUint32(ptr unsafe.Pointer) (uint32, error) {
 	if addr := uintptr(ptr); addr&3 != 0 {
-		return 0, AlignmentError{addr, 4}
+		return 0, NewAlignmentError(addr, 4)
 	}
 	val, sig := loadUint32(ptr)
 	return val, errorFromFaultSignal(uintptr(ptr), sig)
@@ -325,9 +325,9 @@ func errorFromFaultSignal(addr uintptr, sig int32) error {
 	case 0:
 		return nil
 	case int32(unix.SIGSEGV):
-		return SegvError{addr}
+		return NewSegvError(addr)
 	case int32(unix.SIGBUS):
-		return BusError{addr}
+		return NewBusError(addr)
 	default:
 		panic(fmt.Sprintf("safecopy got unexpected signal %d at address %#x", sig, addr))
 	}

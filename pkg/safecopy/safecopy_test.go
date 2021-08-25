@@ -143,7 +143,7 @@ func TestSwapUint32AlignmentError(t *testing.T) {
 		alignedIndex = 4 - offset
 	}
 	ptr := unsafe.Pointer(&data[alignedIndex+1])
-	want := AlignmentError{Addr: uintptr(ptr), Alignment: 4}
+	want := NewAlignmentError(uintptr(ptr) /*addr*/, 4 /*alignment*/)
 	if _, err := SwapUint32(ptr, 1); err != want {
 		t.Errorf("Unexpected error: got %v, want %v", err, want)
 	}
@@ -180,7 +180,7 @@ func TestSwapUint64AlignmentError(t *testing.T) {
 		alignedIndex = 8 - offset
 	}
 	ptr := unsafe.Pointer(&data[alignedIndex+1])
-	want := AlignmentError{Addr: uintptr(ptr), Alignment: 8}
+	want := NewAlignmentError(uintptr(ptr) /*addr*/, 8 /*alignment*/)
 	if _, err := SwapUint64(ptr, 1); err != want {
 		t.Errorf("Unexpected error: got %v, want %v", err, want)
 	}
@@ -214,7 +214,7 @@ func TestCompareAndSwapUint32AlignmentError(t *testing.T) {
 		alignedIndex = 4 - offset
 	}
 	ptr := unsafe.Pointer(&data[alignedIndex+1])
-	want := AlignmentError{Addr: uintptr(ptr), Alignment: 4}
+	want := NewAlignmentError(uintptr(ptr) /*addr*/, 4 /*alignment*/)
 	if _, err := CompareAndSwapUint32(ptr, 0, 1); err != want {
 		t.Errorf("Unexpected error: got %v, want %v", err, want)
 	}
@@ -270,7 +270,7 @@ func TestCopyInSegvError(t *testing.T) {
 				if n != bytesBeforeFault {
 					t.Errorf("Unexpected copy length: got %v, want %v", n, bytesBeforeFault)
 				}
-				if want := (SegvError{secondPage}); err != want {
+				if want := NewSegvError(secondPage /*addr*/); err != want {
 					t.Errorf("Unexpected error: got %v, want %v", err, want)
 				}
 				if got, want := dst[:bytesBeforeFault], mapping[pageSize-bytesBeforeFault:pageSize]; !bytes.Equal(got, want) {
@@ -294,7 +294,7 @@ func TestCopyInBusError(t *testing.T) {
 				if n != bytesBeforeFault {
 					t.Errorf("Unexpected copy length: got %v, want %v", n, bytesBeforeFault)
 				}
-				if want := (BusError{secondPage}); err != want {
+				if want := NewBusError(secondPage /*addr*/); err != want {
 					t.Errorf("Unexpected error: got %v, want %v", err, want)
 				}
 				if got, want := dst[:bytesBeforeFault], mapping[pageSize-bytesBeforeFault:pageSize]; !bytes.Equal(got, want) {
@@ -318,7 +318,7 @@ func TestCopyOutSegvError(t *testing.T) {
 				if n != bytesBeforeFault {
 					t.Errorf("Unexpected copy length: got %v, want %v", n, bytesBeforeFault)
 				}
-				if want := (SegvError{secondPage}); err != want {
+				if want := NewSegvError(secondPage /*addr*/); err != want {
 					t.Errorf("Unexpected error: got %v, want %v", err, want)
 				}
 				if got, want := mapping[pageSize-bytesBeforeFault:pageSize], src[:bytesBeforeFault]; !bytes.Equal(got, want) {
@@ -342,7 +342,7 @@ func TestCopyOutBusError(t *testing.T) {
 				if n != bytesBeforeFault {
 					t.Errorf("Unexpected copy length: got %v, want %v", n, bytesBeforeFault)
 				}
-				if want := (BusError{secondPage}); err != want {
+				if want := NewBusError(secondPage /*addr*/); err != want {
 					t.Errorf("Unexpected error: got %v, want %v", err, want)
 				}
 				if got, want := mapping[pageSize-bytesBeforeFault:pageSize], src[:bytesBeforeFault]; !bytes.Equal(got, want) {
@@ -366,7 +366,7 @@ func TestCopySourceSegvError(t *testing.T) {
 				if n != uintptr(bytesBeforeFault) {
 					t.Errorf("Unexpected copy length: got %v, want %v", n, bytesBeforeFault)
 				}
-				if want := (SegvError{secondPage}); err != want {
+				if want := NewSegvError(secondPage /*addr*/); err != want {
 					t.Errorf("Unexpected error: got %v, want %v", err, want)
 				}
 				if got, want := dst[:bytesBeforeFault], mapping[pageSize-bytesBeforeFault:pageSize]; !bytes.Equal(got, want) {
@@ -390,7 +390,7 @@ func TestCopySourceBusError(t *testing.T) {
 				if n != uintptr(bytesBeforeFault) {
 					t.Errorf("Unexpected copy length: got %v, want %v", n, bytesBeforeFault)
 				}
-				if want := (BusError{secondPage}); err != want {
+				if want := NewBusError(secondPage /*addr*/); err != want {
 					t.Errorf("Unexpected error: got %v, want %v", err, want)
 				}
 				if got, want := dst[:bytesBeforeFault], mapping[pageSize-bytesBeforeFault:pageSize]; !bytes.Equal(got, want) {
@@ -414,7 +414,7 @@ func TestCopyDestinationSegvError(t *testing.T) {
 				if n != uintptr(bytesBeforeFault) {
 					t.Errorf("Unexpected copy length: got %v, want %v", n, bytesBeforeFault)
 				}
-				if want := (SegvError{secondPage}); err != want {
+				if want := NewSegvError(secondPage /*addr*/); err != want {
 					t.Errorf("Unexpected error: got %v, want %v", err, want)
 				}
 				if got, want := mapping[pageSize-bytesBeforeFault:pageSize], src[:bytesBeforeFault]; !bytes.Equal(got, want) {
@@ -438,7 +438,7 @@ func TestCopyDestinationBusError(t *testing.T) {
 				if n != uintptr(bytesBeforeFault) {
 					t.Errorf("Unexpected copy length: got %v, want %v", n, bytesBeforeFault)
 				}
-				if want := (BusError{secondPage}); err != want {
+				if want := NewBusError(secondPage /*addr*/); err != want {
 					t.Errorf("Unexpected error: got %v, want %v", err, want)
 				}
 				if got, want := mapping[pageSize-bytesBeforeFault:pageSize], src[:bytesBeforeFault]; !bytes.Equal(got, want) {
@@ -461,7 +461,7 @@ func TestZeroOutSegvError(t *testing.T) {
 				if n != uintptr(bytesBeforeFault) {
 					t.Errorf("Unexpected write length: got %v, want %v", n, bytesBeforeFault)
 				}
-				if want := (SegvError{secondPage}); err != want {
+				if want := NewSegvError(secondPage /*addr*/); err != want {
 					t.Errorf("Unexpected error: got %v, want %v", err, want)
 				}
 				if got, want := mapping[pageSize-bytesBeforeFault:pageSize], make([]byte, bytesBeforeFault); !bytes.Equal(got, want) {
@@ -484,7 +484,7 @@ func TestZeroOutBusError(t *testing.T) {
 				if n != uintptr(bytesBeforeFault) {
 					t.Errorf("Unexpected write length: got %v, want %v", n, bytesBeforeFault)
 				}
-				if want := (BusError{secondPage}); err != want {
+				if want := NewBusError(secondPage /*addr*/); err != want {
 					t.Errorf("Unexpected error: got %v, want %v", err, want)
 				}
 				if got, want := mapping[pageSize-bytesBeforeFault:pageSize], make([]byte, bytesBeforeFault); !bytes.Equal(got, want) {
@@ -501,7 +501,7 @@ func TestSwapUint32SegvError(t *testing.T) {
 	withSegvErrorTestMapping(t, func(mapping []byte) {
 		secondPage := uintptr(unsafe.Pointer(&mapping[pageSize]))
 		_, err := SwapUint32(unsafe.Pointer(secondPage), 1)
-		if want := (SegvError{secondPage}); err != want {
+		if want := NewSegvError(secondPage /*addr*/); err != want {
 			t.Errorf("Unexpected error: got %v, want %v", err, want)
 		}
 	})
@@ -513,7 +513,7 @@ func TestSwapUint32BusError(t *testing.T) {
 	withBusErrorTestMapping(t, func(mapping []byte) {
 		secondPage := uintptr(unsafe.Pointer(&mapping[pageSize]))
 		_, err := SwapUint32(unsafe.Pointer(secondPage), 1)
-		if want := (BusError{secondPage}); err != want {
+		if want := NewBusError(secondPage /*addr*/); err != want {
 			t.Errorf("Unexpected error: got %v, want %v", err, want)
 		}
 	})
@@ -525,7 +525,7 @@ func TestSwapUint64SegvError(t *testing.T) {
 	withSegvErrorTestMapping(t, func(mapping []byte) {
 		secondPage := uintptr(unsafe.Pointer(&mapping[pageSize]))
 		_, err := SwapUint64(unsafe.Pointer(secondPage), 1)
-		if want := (SegvError{secondPage}); err != want {
+		if want := NewSegvError(secondPage /*addr*/); err != want {
 			t.Errorf("Unexpected error: got %v, want %v", err, want)
 		}
 	})
@@ -537,7 +537,7 @@ func TestSwapUint64BusError(t *testing.T) {
 	withBusErrorTestMapping(t, func(mapping []byte) {
 		secondPage := uintptr(unsafe.Pointer(&mapping[pageSize]))
 		_, err := SwapUint64(unsafe.Pointer(secondPage), 1)
-		if want := (BusError{secondPage}); err != want {
+		if want := NewBusError(secondPage /*addr*/); err != want {
 			t.Errorf("Unexpected error: got %v, want %v", err, want)
 		}
 	})
@@ -549,7 +549,7 @@ func TestCompareAndSwapUint32SegvError(t *testing.T) {
 	withSegvErrorTestMapping(t, func(mapping []byte) {
 		secondPage := uintptr(unsafe.Pointer(&mapping[pageSize]))
 		_, err := CompareAndSwapUint32(unsafe.Pointer(secondPage), 0, 1)
-		if want := (SegvError{secondPage}); err != want {
+		if want := NewSegvError(secondPage /*addr*/); err != want {
 			t.Errorf("Unexpected error: got %v, want %v", err, want)
 		}
 	})
@@ -561,7 +561,7 @@ func TestCompareAndSwapUint32BusError(t *testing.T) {
 	withBusErrorTestMapping(t, func(mapping []byte) {
 		secondPage := uintptr(unsafe.Pointer(&mapping[pageSize]))
 		_, err := CompareAndSwapUint32(unsafe.Pointer(secondPage), 0, 1)
-		if want := (BusError{secondPage}); err != want {
+		if want := NewBusError(secondPage /*addr*/); err != want {
 			t.Errorf("Unexpected error: got %v, want %v", err, want)
 		}
 	})

@@ -21,14 +21,23 @@ import (
 	"runtime"
 
 	"golang.org/x/sys/unix"
+	"gvisor.dev/gvisor/pkg/abi/linux/errno"
 	"gvisor.dev/gvisor/pkg/errors"
 	"gvisor.dev/gvisor/pkg/errors/linuxerr"
 )
 
 // SegvError is returned when a safecopy function receives SIGSEGV.
 type SegvError struct {
-	// Addr is the address at which the SIGSEGV occurred.
 	Addr uintptr
+	err  *errors.Error
+}
+
+// NewSegvError constructs a SegvError.
+func NewSegvError(addr uintptr) SegvError {
+	return SegvError{
+		err:  linuxerr.EFAULT,
+		Addr: addr,
+	}
 }
 
 // Error implements error.Error.
@@ -36,10 +45,28 @@ func (e SegvError) Error() string {
 	return fmt.Sprintf("SIGSEGV at %#x", e.Addr)
 }
 
+// Errno implements errors.GuestError.Errno.
+func (e SegvError) Errno() errno.Errno {
+	return e.err.Errno()
+}
+
+// GuestError implements errors.GuestError.GuestError.
+func (e SegvError) GuestError() *errors.Error {
+	return e.err
+}
+
 // BusError is returned when a safecopy function receives SIGBUS.
 type BusError struct {
-	// Addr is the address at which the SIGBUS occurred.
+	err  *errors.Error
 	Addr uintptr
+}
+
+// NewBusError constructs a BusError.
+func NewBusError(addr uintptr) BusError {
+	return BusError{
+		err:  linuxerr.EFAULT,
+		Addr: addr,
+	}
 }
 
 // Error implements error.Error.
@@ -47,19 +74,46 @@ func (e BusError) Error() string {
 	return fmt.Sprintf("SIGBUS at %#x", e.Addr)
 }
 
+// Errno implements errors.GuestError.Errno.
+func (e BusError) Errno() errno.Errno {
+	return e.err.Errno()
+}
+
+// GuestError implements errors.GuestError.GuestError.
+func (e BusError) GuestError() *errors.Error {
+	return e.err
+}
+
 // AlignmentError is returned when a safecopy function is passed an address
 // that does not meet alignment requirements.
 type AlignmentError struct {
-	// Addr is the invalid address.
-	Addr uintptr
-
-	// Alignment is the required alignment.
+	err       *errors.Error
+	Addr      uintptr
 	Alignment uintptr
+}
+
+// NewAlignmentError constructs an AlignmentError
+func NewAlignmentError(addr, alignment uintptr) AlignmentError {
+	return AlignmentError{
+		err:       linuxerr.EFAULT,
+		Addr:      addr,
+		Alignment: alignment,
+	}
 }
 
 // Error implements error.Error.
 func (e AlignmentError) Error() string {
 	return fmt.Sprintf("address %#x is not aligned to a %d-byte boundary", e.Addr, e.Alignment)
+}
+
+// Errno implements errors.GuestError.Errno.
+func (e AlignmentError) Errno() errno.Errno {
+	return e.err.Errno()
+}
+
+// GuestError implements errors.GuestError.GuestError.
+func (e AlignmentError) GuestError() *errors.Error {
+	return e.err
 }
 
 var (
@@ -141,7 +195,7 @@ func init() {
 	linuxerr.AddErrorUnwrapper(func(e error) (*errors.Error, bool) {
 		switch e.(type) {
 		case SegvError, BusError, AlignmentError:
-			return linuxerr.EFAULT, true
+			return e.(errors.GuestError).GuestError(), true
 		default:
 			return nil, false
 		}

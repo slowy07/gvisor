@@ -19,6 +19,13 @@ import (
 	"gvisor.dev/gvisor/pkg/abi/linux/errno"
 )
 
+// GuestError contains methods for internal guest errors for gVisor.
+// Implementations of local Errors
+type GuestError interface {
+	Errno() errno.Errno
+	GuestError() *Error
+}
+
 // Error represents a syscall errno with a descriptive message.
 type Error struct {
 	errno   errno.Errno
@@ -36,5 +43,8 @@ func New(err errno.Errno, message string) *Error {
 // Error implements error.Error.
 func (e *Error) Error() string { return e.message }
 
-// Errno returns the underlying errno.Errno value.
+// Errno implements GuestError.Errno.
 func (e *Error) Errno() errno.Errno { return e.errno }
+
+// GuestError implements GuestError.GuestError.
+func (e *Error) GuestError() *Error { return e }

@@ -282,11 +282,12 @@ func FromError(err error) *Error {
 		return FromHost(errno)
 	}
 
-	if linuxErr, ok := err.(*errors.Error); ok {
-		return FromHost(unix.Errno(linuxErr.Errno()))
+	if guestErr, ok := err.(errors.GuestError); ok {
+		return FromHost(unix.Errno(guestErr.Errno()))
 	}
 
-	panic("unknown error: " + err.Error())
+	msg := fmt.Sprintf("err: %s type: %T", err.Error(), err)
+	panic(msg)
 }
 
 // ConvertIntr converts the provided error code (err) to another one (intr) if
